@@ -1,0 +1,236 @@
+---
+title: "Willingness to have kid in relation to income, age and number of existing kids"
+author: "Yuhan Huang, Tong Li, Chong Zhang, Chuyi Zhang"
+date: "2020-10-19T21:49:57-07:00"
+categories: ["R"]
+tags: ["R Markdown", "plot", "regression"]
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Abstract
+People's reproducing decisions could be quite influential towards family 
+structure and social development under a more general concept. Therefore, this 
+research uses survey data from the 2017 Canadian General Social Survey (GSS) to 
+answer the following questions. How do the income level, number of existing 
+kids, and couples' average age influence their willingness to have kids in the 
+future? More specifically, how do these variables strengthen or weaken couples' 
+willingness to have a child in the future?After presenting several statistical 
+models (such as the logistic model), the question was discussed and interpreted 
+based on the model outcome.
+
+## Introduction
+The topic of this study is about whether a family will want a child in the
+future(FUTURE_CHILD), considering INCOME, AGE, and TOTAL_CHILDREN as 
+predictor variables. In the meantime, we can find the most influential factor 
+in this decision. The insight for this study is based on the diminishing birth 
+rate year by year, the birth rate for 2017 was only 10.55%, and it has been 
+decreasing since 2009 right after the financial crisis in 2008, which is the 
+reason we(this research) include family income as a predictor variable. GSS's
+primary purpose is to
+provide information on specific social policy issues. This data analysis will 
+show the severity of this problem, which would help enact new policies toward 
+this issue.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(blogdown)
+data <- read_csv('2020-10-20-gss.csv')
+```
+
+
+## Data
+The data in this research is the survey data from the 2017 GSS. Combining the
+research question following data variables were selected for the first 
+(logistic) model: respondent's age, family income, the total number of children 
+born in the past, and their willingness to have a child in the future. By 
+omitting each variable's unknown value, 4086 remaining observations became 
+accessible for the model(logistic model). During the cleaning process, the 
+income level was defined from the 'Income_family' variable instead of 
+'income_respondent' because, in an existing family, total or average income can 
+better reflect the financial status than using the estimator's income. The 
+dependent variable of 'future_children_intention' was modified into a binary 
+outcome of '0' as 'probably not' or 'definitely not' to the question and '1' 
+representing 'probably yes' and 'definitely yes' perform better under a logistic
+model. The data could have missed some lurking variables, such as the age of the
+existing children. However, the marginal change in willingness dependent on this
+variable can be ignored because the combination of age and number of the current
+children can indirectly reflect the change in children's age.
+
+```{r}
+working_data <- data %>%
+  select('total_children','children_in_household', 'future_children_intention'
+         ,'age','income_family')
+```
+
+
+```{r, markup = FALSE}
+working_data1 <- working_data %>%
+  mutate(future_child = future_children_intention == 'Probably yes'
+         | future_children_intention == 'Definitely yes' ) %>%
+  filter(40>=age & age>=16) %>%
+  select(-'future_children_intention') %>%
+  na.omit(working_data1)
+
+
+#give an income level based on variable income_family
+working_data1 <- working_data1 %>% 
+  mutate(income_level = income_family)
+lv1 <- replace(working_data1$income_level, 
+               working_data1$income_level == "Less than $25,000", 1)
+working_data1 <- working_data1 %>% mutate(income_level = lv1)
+
+lv2 <- replace(working_data1$income_level, 
+               working_data1$income_level == "$25,000 to $49,999" , 2)
+working_data1 <- working_data1 %>% mutate(income_level = lv2)
+
+lv3 <- replace(working_data1$income_level, 
+               working_data1$income_level == "$50,000 to $74,999" , 3)
+working_data1 <- working_data1 %>% mutate(income_level = lv3)
+
+lv4 <- replace(working_data1$income_level, 
+               working_data1$income_level == "$75,000 to $99,999" , 4)
+working_data1 <- working_data1 %>% mutate(income_level = lv4)
+
+lv5 <- replace(working_data1$income_level, 
+               working_data1$income_level == "$100,000 to $ 124,999" , 5)
+working_data1 <- working_data1 %>% mutate(income_level = lv5)
+
+lv6 <- replace(working_data1$income_level, 
+               working_data1$income_level == "$125,000 and more" , 6)
+working_data1 <- working_data1 %>% mutate(income_level = lv6)
+working_data1$income_level <- as.numeric(working_data1$income_level)
+```
+
+
+## Model
+
+This research uses logistic regression to analyze the result, which is a binary 
+dependent variable (yes or no). It is because the logistic regression model is 
+used for predictive analysis to explain the relationship between one dependent 
+binary variable (yes or no) and three nomial variables (age, income level, and 
+total children).
+
+```{r}
+logmodel<-glm(future_child ~ age + total_children + income_level, 
+              data = working_data1 , family = 'binomial')
+summary(logmodel)
+```
+
+
+The regression equation of our study is: 
+$$log(p/1-p)= 5.14 - 0.168x_age - 1.110x_total.children - 0.016x_income.level$$
+For every additional unit increase in age we expect the log odds of 
+willingness to have kid to decrease by 0.168.
+For every additional unit increase in total_children we expect the log odds of 
+willingness to have kid to have kid to decrease by 1.110.
+For every additional unit increase in income_level we expect the log odds of 
+willingness to have kid to decrease by 0.016.
+
+
+
+```{r}
+new_working_data <- 
+  data.frame(age=seq(min(working_data1$age), 
+                     max(working_data1$age), len = 4086), 
+             total_children=seq(min(working_data1$total_children), 
+                                max(working_data1$total_children), len = 4086),
+                        
+income_level = seq(min(working_data1$income_level),
+                   max(working_data1$income_level), len = 4086))
+
+new_working_data$future_child = 
+  predict(logmodel, newdata=new_working_data, type="response")
+
+par(mfrow=c(2, 2)) # put all plot together
+plot(future_child ~ age, data = working_data1, col="red4")
+lines(future_child ~ age, new_working_data, col="green4", lwd=2)
+
+plot(future_child ~ total_children, data = working_data1, col="red4")
+lines(future_child ~ total_children, new_working_data, col="green4", lwd=2)
+
+plot(future_child ~ income_level, data = working_data1, col = "red4")
+lines(future_child ~ income_level, new_working_data, col = "green4", lwd= 2)
+```
+
+## Results
+
+The first plot examines the relationship between FUTURE_CHILD and AGE. The
+equation is written as the probability of wanting a child in the future. The 
+response value of 1 on the y-axis represents "yes," and 0 represents "no" 
+(same for all four plots, omitted in the following paragraphs). The plot shows 
+that the probability of wanting a child in the future decreases as the AGE 
+increases. When the AGE is between 16 to 20, the line's slope is not very steep,
+which indicates that the probability of wanting a child decreases slowly as AGE 
+increases in this period. The line is more vertical for AGE between 20 to 25, 
+which suggests a change in the AGE of 1 year has a more massive effect in this 
+range. When the FUTURE_CHILD goes to zero at the AGE approaches 27, the line 
+flattens.
+
+The second plot examines the relationship between FUTURE_CHILD and 
+TOTAL_CHILDREN. The plot shows that the probability of wanting a child in the 
+future decreases as the TOTAL_CHILDREN increases. When the number of children 
+in the family is between 0 and 1, the slope of the line is not very steep, which 
+indicates that the probability of wanting a child decreases slowly among 0 to 1 
+child. The line is steeper in the TOTAL_CHILDREN between 2 to 3, which indicates
+that a change in TOTAL_CHILDREN increased by 1 has a larger effect in this 
+range. When the FUTURE_CHILD goes to zero at the TOTAL_CHILDREN around 3, the 
+line flattens.
+
+Last plot examines the relationship between FUTURE_CHILD and INCOME_LEVEL. 
+The plot shows that the probability of wanting a child in the future decreases 
+as the INCOME_LEVEL increases. The line is steeper when INCOME_LEVEL is around 
+less than $25,000 to $74,999, which indicates that the income range between 
+$25,000 and $74,999 has a larger effect when making the decision of whether to 
+have a child in the future. When the FUTURE_CHILD goes to zero at the 
+INCOME_LEVEL beyond $75,000, the line flattens.
+
+
+## Discussion
+The GSS sample is drawn using an area probability design that randomly selects
+respondents in households across Canada to participate in the survey. The 
+general population would be all the Canadians. Respondents that become part of 
+the GSS sample are from a mix of urban, suburban, and rural geographic areas, 
+which are the frame population. The GSS uses Statistics Canada’s standard 
+telephone frame, which combines landline and cellular telephone numbers from the
+Address Register, the Census of Population, and various administrative sources, 
+and has been integrated with Statistics Canada’s standard dwelling frame. Last, 
+the sampled population is the people who actually participated in the survey, 
+and the size is approximately 20,000 respondents by 2019. Since 2013, GSS has 
+been collected using a combination of self-completed online questionnaires and 
+telephone interviews. Participation in the study is strictly voluntary, and the 
+sample for the GSS is based on the method of cluster sampling, so the standard 
+errors are larger for the GSS than the simple random sampling. The non-sampling 
+errors include inadequate frame-coverage error, non-response problem; response 
+error; interviewer bias; and processing, editing, and entering error.
+
+# Weaknesses
+In this survey GSS, most of the data is categorical instead of numerical, which 
+produces limitation of choices of models. The categorical data type produces 
+disadvantages, however, considering topic like how a person makes a choice on 
+the question, a binary outcome is able to explain the case better. 
+
+
+# Next Steps
+Working beyond this research, this data set of GSS can tell more about the 
+decision-making question of having a child in the future or not. For example, 
+under measuring the family's financial status, this research used 
+'income_family'. From another perspective, 'income_respondent' can be combined 
+with 'income_family' to show how answers differ between the person who bears 
+more of the family's financial pressure and the rest of the members. A follow-up
+survey could include questions like "Do you feel that you bear more financial 
+pressure from the family or it is equally shared". It can tell something about 
+the lurking variable of their decision to have a child. In the meantime, it also 
+gives more possibility to provide a weighted stratified sampling based on their 
+share of family financial pressure.
+
+## References
+1. https://stackoverflow.com/questions/36685921/plot-logistic-regression-curve-in-r/36686468
+
+2. http://www.sthda.com/english/articles/32-r-graphics-essentials/126-combine-multiple-ggplots-in-one-graph/
+
+3. cleaning data by Rohan Alexander and Sam Caetano
+
+4. "Hello R Markdown" by Frida Gomam
