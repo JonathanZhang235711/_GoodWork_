@@ -1,7 +1,7 @@
 ---
 title: "Multilevel prediction of 2020 American presidential election"
 author: "Yuhan Huang, Tong Li, Chong Zhang, Chuyi Zhang"
-date: "2020-11-02T21:49:57-07:00"
+date: "2020-11-02T00:00:00-07:00"
 output:
   html_document:
     df_print: paged
@@ -23,36 +23,18 @@ output:
 </div>
 <div id="abstract" class="section level1">
 <h1>Abstract</h1>
+<p>Due to Donald Trump’s special political performance in the past four years, the result of the 2020 US presidential election has become significantly focused by not only Americans but also the whole world. This report has used data from Democracy Fund + UCLA Nationscape to build a multilevel logistic regression model and then weight the estimate for each group according to the data from IPULM USA to predict the final result of the election through the post-stratification method.</p>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>We downloaded the full dataset from Democracy Fund + UCLA Nationscape, the
-largest public opinion survey ever conducted. It includes people in every
-congressional district and mid-sized U.S. city in the lead up to the 2020
-election. As we are approaching the presidential election date, nearly everyone
-worldwide is wondering what will be the result for 2020. We are thinking about
-predicting the outcome(whether Trump or Biden will win the election) based on
-the data we have right now. Another goal is finding any voting patterns among
-these individuals based on their gender, age, education level, and specifically
-the census region.
-The remainder of the paper is organized as follows: section 2 introduces the
-survey data; section 3 establishes the survey methodology, discusses the
-multilevel logistic regression model, and discusses essential estimation
-techniques; section 4 talks about the result based on our model; section 5
-focuses on improvement and weaknesses of our model; section 6 is citation for
-this project.</p>
+<p>We downloaded the full dataset from Democracy Fund + UCLA Nationscape, the largest public opinion survey ever conducted. It includes people in every congressional district and mid-sized U.S. city in the leadup to the 2020 election. As we are approaching the presidential election date, nearly everyone worldwide is wondering what will be the result for 2020. We are thinking about predicting the outcome(whether Trump or Biden will win the election) based on the data we have right now. Another goal is finding any voting patterns among these individuals based on their gender, age, education level, and specifically the census region.</p>
 </div>
 </div>
 <div id="data" class="section level1">
 <h1>Data</h1>
 <p>The data of this research was collected by Voter Study Group and IPUMS USA.
-The survey data from the Voter Study Group was cleaned by selecting related
-variables and creating a new numeric variable recording if the survey respondent
-will vote for Donald Trump in the year 2020. The target population was all the Americans who are potential voters for the presidential election; the frame
-population was American citizens who had the right to vote; and the sampled
-population was the people who actually participated in the survey online. We
-used a survey study method to conduct the sample, and the post-stratification
-data was cleaned by counting the number of people in each cell to result in
-the weighted estimating process.</p>
+The survey data from the Voter Study Group was cleaned by selecting related variables
+and creating a new numeric variable recording if the survey respondent will vote for
+Donald Trump in the year 2020. The target population was all the Americans who are potential voters for the presidential election; the frame population was American citizens who had the right to vote, and the sampled population was the people who actually participated in the survey online. We used a survey study method to conduct the sample, and the post-stratification data was cleaned by counting the number of people in each cell to result in the weighted estimating process.</p>
 <div id="model" class="section level2">
 <h2>Model</h2>
 </div>
@@ -131,21 +113,11 @@ good effects with the electorate. We will transform the result of our model,
 for each cell we have <span class="math inline">\(\hat{y}\)</span> to calculate <span class="math display">\[\hat{y^{ps}}=\frac{\sum{N_i}*\hat{y_j}}{\sum{N_i}}\]</span>.
 This results in 41.7% supporting Trump, and following a similar process we get
 43.4% support for Biden.</p>
-<pre><code>## # A tibble: 1 x 1
-##   alp_predict
-##         &lt;dbl&gt;
-## 1       0.417</code></pre>
-<pre><code>## # A tibble: 1 x 1
-##   alp_predict
-##         &lt;dbl&gt;
-## 1       0.434</code></pre>
+<pre><code>##         Trump Biden
+## Yhat ps 41.7% 43.4%</code></pre>
 <div id="results" class="section level2">
 <h2>Results</h2>
-<p>Of 6101 qualified participation in the survey, about 2544 people will vote for
-Trump, 2648 will vote for Biden, and 909 citizens will not vote for either of
-them. In conclusion, Biden will win the 2020 presidential election.
-We found out classifying people according to their age and census_region, both
-groups do not have an overall trend toward the model, due to the large p-value.</p>
+<p>According to the result of post-stratification Biden was predicted to have more support rate among all voters. This support rate advance may lead Biden to be elected. Of 6101 qualified participation in the survey, about 2544 people will vote for Trump, 2648 will vote for Biden, and 909 citizens will not vote for either of them. We found out classifying people according to their age and census_region, both groups do not have an overall trend toward the model, due to the large p-value. But the classification of young adults does have a significant contribution toward the final result.</p>
 </div>
 <div id="discussion" class="section level2">
 <h2>Discussion</h2>
