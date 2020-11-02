@@ -75,6 +75,41 @@ where $ <em>{census.region}=-0.46327-0.105w</em>{north}+0.195w_{south}-0.143w_{w
 We can tell from the beta that gender and age play an important role when
 deciding the voting, census_region, also relatively high contribution to the
 overall model.</p>
+<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace
+##   Approximation) [glmerMod]
+##  Family: binomial  ( logit )
+## Formula: 
+## vote_trump_2020 ~ gender + age + higher_education + (1 | census_region)
+##    Data: survey_data_new
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##   8051.9   8092.2  -4020.0   8039.9     6095 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -1.1999 -0.8245 -0.6431  1.0734  1.7390 
+## 
+## Random effects:
+##  Groups        Name        Variance Std.Dev.
+##  census_region (Intercept) 0.01499  0.1225  
+## Number of obs: 6101, groups:  census_region, 4
+## 
+## Fixed effects:
+##                      Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)          -0.46327    0.09151  -5.062 4.14e-07 ***
+## genderMALE            0.57401    0.05354  10.721  &lt; 2e-16 ***
+## ageOld_adults         0.07615    0.07010   1.086   0.2773    
+## ageYoung_adults      -0.42997    0.06212  -6.922 4.46e-12 ***
+## higher_educationTRUE -0.10027    0.05837  -1.718   0.0858 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr) gnMALE agOld_ agYng_
+## genderMALE  -0.277                     
+## ageOld_dlts -0.322  0.016              
+## ageYng_dlts -0.413  0.002  0.485       
+## hghr_dcTRUE -0.441 -0.084 -0.032  0.088</code></pre>
 </div>
 <div id="post-stratification" class="section level1">
 <h1>Post-Stratification</h1>
@@ -96,61 +131,10 @@ good effects with the electorate. We will transform the result of our model,
 for each cell we have <span class="math inline">\(\hat{y}\)</span> to calculate <span class="math display">\[\hat{y^{ps}}=\frac{\sum{N_i}*\hat{y_j}}{\sum{N_i}}\]</span>.
 This results in 41.7% supporting Trump, and following a similar process we get
 43.4% support for Biden.</p>
-<pre class="r"><code>census_data &lt;- census_data %&gt;% 
-  mutate(education = educd)
-census_data_new &lt;- census_data
-census_data_new &lt;- census_data_new %&gt;% 
-  mutate(man = ifelse(gender == &quot;MALE&quot;, 1, 0))%&gt;%
-  mutate(higher_education = education == &quot;master&#39;s degree&quot;
-         |education == &quot;associate&#39;s degree, type not specified&quot;
-         |education == &quot;bachelor&#39;s degree&quot;
-         |education == &quot;doctoral degree&quot;
-         |education ==&quot;professional degree beyond a bachelor&#39;s degree&quot;
-         |education ==&quot;some college, but less than 1 year&quot;
-         |education ==&quot;1 or more years of college credit, no degree&quot;)
-census_data_new$census_region[census_data_new$region == 
-                                &quot;middle atlantic division&quot;
-                              |census_data_new$region == 
-                                &quot;new england division&quot;]&lt;-&quot;Northeast&quot; </code></pre>
-<pre><code>## Warning: Unknown or uninitialised column: `census_region`.</code></pre>
-<pre class="r"><code>census_data_new$census_region[census_data_new$region == 
-                                &quot;east south central div&quot;|census_data_new$region 
-                              == &quot;west south central div&quot;|census_data_new$region
-                              == &quot;south atlantic division&quot;]&lt;-&quot;South&quot; 
-census_data_new$census_region[census_data_new$region == 
-                                &quot;mountain division&quot;|census_data_new$region == 
-                                &quot;pacific division&quot;]&lt;-&quot;West&quot;
-census_data_new$census_region[census_data_new$region == 
-                                &quot;west north central div&quot;|census_data_new$region
-                              == &quot;east north central div&quot;]&lt;-&quot;Midwest&quot;
-census_data_new$age_1[census_data_new$age &gt;=18 ]&lt;-&quot;Old_adults&quot;</code></pre>
-<pre><code>## Warning: Unknown or uninitialised column: `age_1`.</code></pre>
-<pre class="r"><code>census_data_new$age_1[census_data_new$age &lt;= 60]&lt;-&quot;Mid_age&quot;
-census_data_new$age_1[census_data_new$age &lt;= 40]&lt;-&quot;Young_adults&quot;
-census_data_new$age&lt;-census_data_new$age_1</code></pre>
-<pre class="r"><code>census_data_new$estimate &lt;-
-  model_logit %&gt;%
-  predict(newdata = census_data_new, type = &quot;response&quot;)
-
-result &lt;- census_data_new%&gt;%
-  filter(age &gt;= 18)%&gt;%
-  mutate(alp_predict_prop = estimate*n/sum(n)) %&gt;%
-  summarise(alp_predict = sum(alp_predict_prop))
-
-print(result)</code></pre>
 <pre><code>## # A tibble: 1 x 1
 ##   alp_predict
 ##         &lt;dbl&gt;
 ## 1       0.417</code></pre>
-<pre class="r"><code>census_data_new$estimate &lt;-
-  model_logit_b %&gt;%
-  predict(newdata = census_data_new, type = &quot;response&quot;)
-
-result_b &lt;- census_data_new%&gt;%
-  filter(age &gt;= 18)%&gt;%
-  mutate(alp_predict_prop = estimate*n/sum(n)) %&gt;%
-  summarise(alp_predict = sum(alp_predict_prop))
-print(result_b)</code></pre>
 <pre><code>## # A tibble: 1 x 1
 ##   alp_predict
 ##         &lt;dbl&gt;
