@@ -1,0 +1,244 @@
+---
+title: "Multilevel prediction of 2020 American presidential election"
+author: "Yuhan Huang, Tong Li, Chong Zhang, Chuyi Zhang"
+date: "November 2nd, 2020"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(broom)
+library(brms) 
+
+library(lme4)
+
+# Loading in the cleaned survey Data
+survey_data <- read_csv("2020-11-02-survey_data.csv")
+
+# Loading in the cleaned census Data
+census_data <- read_csv("2020-11-02-census_data.csv")
+
+census_data <-census_data %>%
+  mutate(gender = toupper(sex))
+survey_data$gender<-toupper(survey_data$gender)
+```
+
+# Multilevel prediction of 2020 American presidential election
+
+## Yuhan Huang, Tong Li, Chong Zhang, Chuyi Zhang
+## November 2nd, 2020
+
+# Abstract
+
+## Introduction
+We downloaded the full dataset from Democracy Fund + UCLA Nationscape, the 
+largest public opinion survey ever conducted. It includes people in every 
+congressional district and mid-sized U.S. city in the lead up to the 2020 
+election. As we are approaching the presidential election date, nearly everyone
+worldwide is wondering what will be the result for 2020. We are thinking about
+predicting the outcome(whether Trump or Biden will win the election) based on 
+the data we have right now. Another goal is finding any voting patterns among 
+these individuals based on their gender, age, education level, and specifically 
+the census region.
+The remainder of the paper is organized as follows: section 2 introduces the 
+survey data; section 3 establishes the survey methodology, discusses the 
+multilevel logistic regression model, and discusses essential estimation 
+techniques; section 4 talks about the result based on our model; section 5 
+focuses on improvement and weaknesses of our model; section 6 is citation for
+this project.
+
+# Data
+The data of this research was collected by Voter Study Group and IPUMS USA.
+The survey data from the Voter Study Group was cleaned by selecting related 
+variables and creating a new numeric variable recording if the survey respondent
+will vote for Donald Trump in the year 2020. The target population was all the Americans who are potential voters for the presidential election; the frame 
+population was American citizens who had the right to vote; and the sampled
+population was the people who actually participated in the survey online. We 
+used a survey study method to conduct the sample, and the post-stratification 
+data was cleaned by counting the number of people in each cell  to result in 
+the weighted estimating process. 
+
+## Model
+
+# Model Specifics
+Due to the interest in the 2020 American presidential election result. This research
+chose the Multilevel logistic model to predict election result for each 
+individual and uses the post-stratification technique to weight the estimates 
+to return the final prediction of the election outcome since MRP is often used 
+for dichotomous fixed choice questions. We use this model due to the goal of 
+estimating the odds that whether Trump will win the election(the yes/no outcome)
+while taking the dependency of data into account (the fact that voting intention
+is not finalized). Practically, it allows us to estimate such odds as a function
+of lower level variables (age, gender), higher level variables (education level,
+census regions), and the way they are interrelated.
+By fitting in all the variables, we get the 
+$$ y_{trump}=\beta_{census.region}+0.547x_{male}+0.076x_{old}-0.43x_{young}-0.02x_{higher.education}$$
+where $ \beta_{census.region}=-0.46327-0.105w_{north}+0.195w_{south}-0.143w_{west}$
+We can tell from the beta that gender and age play an important role when 
+deciding the voting, census_region, also relatively high contribution to the 
+overall model.
+
+```{r , include=FALSE,results='markup'}
+survey_data_new <- survey_data %>%
+  select(gender,
+         vote_2020,
+         vote_2016,
+         age,
+         education,
+         census_region)%>%
+  mutate(vote_trump_2020= vote_2020=='Donald Trump')%>%
+  mutate(vote_trump_2016= vote_2016=='Donald Trump')%>%
+  mutate(vote_Biden_2020= vote_2020=='Joe Biden')%>%
+  mutate(higher_education = education == 'College Degree (such as B.A., B.S.)'
+         |education == 'Doctorate degree'|education == 'Associate Degree'
+         |education == 'Masters degree'|education ==
+           'Completed some college, but no degree'
+         |education =='Completed some graduate, but no degree')%>%
+  filter(age>=18)
+survey_data_new$age_1[survey_data_new$age >=18 ]<-"Old_adults"
+survey_data_new$age_1[survey_data_new$age <= 60]<-"Mid_age"
+survey_data_new$age_1[survey_data_new$age <= 40]<-"Young_adults"
+survey_data_new$age<-survey_data_new$age_1
+model_logit <- glmer(vote_trump_2020 ~ gender+
+         age+higher_education+(1|census_region),
+                   data = survey_data_new, 
+                   family = "binomial")
+model_logit_b <- glmer(vote_Biden_2020 ~ gender+
+         age+higher_education+(1|census_region),
+                   data = survey_data_new, 
+                   family = "binomial")
+model_logit1 <- glm(vote_trump_2020 ~ vote_trump_2016,
+                   data = survey_data_new, 
+                   family = "binomial")
+summary(model_logit)
+
+```
+
+# Post-Stratification
+Poststratification is a popular method for correcting known differences between 
+sample and target populations (Little, 1993).  We post-stratified the census 
+data responses to mimic the survey sample of likely voters. To make inference 
+about the population level, we use the result of our model and apply the 
+probability of voting for Trump to the population level, where $$y_j$$ is the 
+estimate of y in cell j, and $N_j$ is the size of each $j^{th}$ cell in the 
+population. Through the combination of different ages group(young_adults, 
+middle-aged adults, old adults), citizens(naturalized citizens, not citizens),
+gender(male, female), an education level(higher education, no higher education), 
+and their census region(Midwest, Northeast, South, West), thus partitioning the 
+data into 96 cells, results in the weighted estimating process. We focus on 
+these four explanatory variables due to its influence on the voting result. For
+instance,we chose the census_region as level 2, because different states have 
+policies that are more beneficial for specific groups, which will do Trump much
+good effects with the electorate. We will transform the result of our model, 
+for each cell we have $\hat{y}$ to calculate \[\hat{y^{ps}}=\frac{\sum{N_i}*\hat{y_j}}{\sum{N_i}}\]. 
+This results in 41.7% supporting Trump, and following a similar process we get 
+43.4% support for Biden. 
+
+```{r}
+census_data <- census_data %>% 
+  mutate(education = educd)
+census_data_new <- census_data
+census_data_new <- census_data_new %>% 
+  mutate(man = ifelse(gender == "MALE", 1, 0))%>%
+  mutate(higher_education = education == "master's degree"
+         |education == "associate's degree, type not specified"
+         |education == "bachelor's degree"
+         |education == "doctoral degree"
+         |education =="professional degree beyond a bachelor's degree"
+         |education =="some college, but less than 1 year"
+         |education =="1 or more years of college credit, no degree")
+census_data_new$census_region[census_data_new$region == 
+                                "middle atlantic division"
+                              |census_data_new$region == 
+                                "new england division"]<-"Northeast" 
+census_data_new$census_region[census_data_new$region == 
+                                "east south central div"|census_data_new$region 
+                              == "west south central div"|census_data_new$region
+                              == "south atlantic division"]<-"South" 
+census_data_new$census_region[census_data_new$region == 
+                                "mountain division"|census_data_new$region == 
+                                "pacific division"]<-"West"
+census_data_new$census_region[census_data_new$region == 
+                                "west north central div"|census_data_new$region
+                              == "east north central div"]<-"Midwest"
+census_data_new$age_1[census_data_new$age >=18 ]<-"Old_adults"
+census_data_new$age_1[census_data_new$age <= 60]<-"Mid_age"
+census_data_new$age_1[census_data_new$age <= 40]<-"Young_adults"
+census_data_new$age<-census_data_new$age_1
+
+```
+
+
+```{r}
+census_data_new$estimate <-
+  model_logit %>%
+  predict(newdata = census_data_new, type = "response")
+
+result <- census_data_new%>%
+  filter(age >= 18)%>%
+  mutate(alp_predict_prop = estimate*n/sum(n)) %>%
+  summarise(alp_predict = sum(alp_predict_prop))
+
+print(result)
+
+
+census_data_new$estimate <-
+  model_logit_b %>%
+  predict(newdata = census_data_new, type = "response")
+
+result_b <- census_data_new%>%
+  filter(age >= 18)%>%
+  mutate(alp_predict_prop = estimate*n/sum(n)) %>%
+  summarise(alp_predict = sum(alp_predict_prop))
+print(result_b)
+```
+
+## Results
+Of 6101 qualified participation in the survey,  about 2544 people will vote for 
+Trump, 2648 will vote for Biden, and 909 citizens will not vote for either of 
+them. In conclusion, Biden will win the 2020 presidential election.
+We found out classifying people according to their age and census_region, both 
+groups do not have an overall trend toward the model, due to the large p-value.
+
+## Discussion
+We finish the primary goal of estimating whether Trump will win the election. 
+Besides that, we are also interested in voting patterns based on people’s
+classification. The exciting thing is that people with higher education(earn 
+bachelor or master’s degrees)tend to be against Trump; while individuals who 
+have lower education levels tend to favor Trump. We choose age and sex as two 
+strongly correlated explanatory variables to voting preferences, but we are not
+sure about other variables. In the beginning, we thought census_region might 
+make a massive difference between people’s choices, as it turned out, people’s 
+voting behavior has little relation to their region.
+
+# Weaknesses
+Like all the survey estimates, these numbers are subject to a degree of error.
+There is an even higher possibility in this case because we are asking 
+respondents about future plans, which might change. As such, the estimates 
+should be interpreted with these uncertainties in mind. Specifically, Donald 
+Trump supporters(registered voters) intend to vote in-person on Election Day, 
+which is a much higher uncertainty towards the final result. 
+Since we only use four explanatory variables out of 16 variables we could use, 
+and the sample size is relatively large, our model is probably underfitting, 
+too generalized for such a big dataset.
+
+
+#Next Steps
+When the election is done, we will have the finalized data. First we can check 
+whether we have the correct prediction by our model, we can check this by doing
+a post-hoc analysis or another survey of how to better improve estimation for 
+future elections. Further studies may focus on voting patterns across the 
+election years. We can check whether people who voted for Trump in 2016 still 
+voted for Trump in 2020. This can be further analyzed to gain more insight about
+how satisfied Trump supporters are regarding the performance of the Trump
+administration. 
+
+## Reference
+1. IPUMS USA, census data of 2018 USA, Retrieved from:
+https://usa.ipums.org/usa-action/data_requests
+2. Voter Study Group, Nationscape, Retrieved from:
+https://www.voterstudygroup.org/downloads?key=4b0ccde1-6d71-4a6f-8c5b-69e8172e4688
+
