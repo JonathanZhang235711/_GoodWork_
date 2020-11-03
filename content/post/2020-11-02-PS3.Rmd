@@ -40,15 +40,13 @@ survey_data$gender<-toupper(survey_data$gender)
 Due to Donald Trump's special political performance in the past four years, the result of the 2020 US presidential election has become significantly focused by not only Americans but also the whole world. This report has used data from Democracy Fund + UCLA Nationscape to build a multilevel logistic regression model and then weight the estimate for each group according to the data from IPULM USA to predict the final result of the election through the post-stratification method. 
 
 ## Introduction
-We downloaded the full dataset from Democracy Fund + UCLA Nationscape, the largest public opinion survey ever conducted. It includes people in every congressional district and mid-sized U.S. city in the leadup to the 2020 election. As we are approaching the presidential election date, nearly everyone worldwide is wondering what will be the result for 2020. We are thinking about predicting the outcome(whether Trump or Biden will win the election) based on the data we have right now. Another goal is finding any voting patterns among these individuals based on their gender, age, education level, and specifically the census region.
+The US election is one of the most important events that happen every four years. Meanwhile, our US president Donald Trump has successfully drawn more attention from the public to this election happened in 2020. As it was described by CNN, his latest controversies push him into the loop of justifying, preserving, and enriching his characterization of himself. (Collinson, 2020) However, the support rate of Trumps opponent Biden seems to have a weird trend of winning. Joe Biden in his case was described as “77-year-old could barely hold a tune” by Nick Bryant from CNN in late July. Therefore, this study will use the downloaded full dataset from Democracy Fund + UCLA Nationscape to build up a model in order to predict the weighted support rate and the final result of the election. This data set includes people in every congressional district and mid-sized U.S. city in the leadup to the 2020 election. As we are approaching the presidential election date, nearly everyone worldwide is wondering what will be the result for 2020. We are thinking about predicting the outcome(whether Trump or Biden will win the election) based on the data we have right now. Another goal is finding any voting patterns among these individuals based on their gender, age, education level, and specifically the census region.
 
 # Data
 The data of this research was collected by Voter Study Group and IPUMS USA.
 The survey data from the Voter Study Group was cleaned by selecting related variables
 and creating a new numeric variable recording if the survey respondent will vote for 
 Donald Trump in the year 2020. The target population was all the Americans who are potential voters for the presidential election; the frame population was American citizens who had the right to vote, and the sampled population was the people who actually participated in the survey online. We used a survey study method to conduct the sample, and the post-stratification data was cleaned by counting the number of people in each cell to result in the weighted estimating process. 
- 
-
 
 ## Model
 
@@ -197,15 +195,7 @@ According to the result of post-stratification Biden was predicted to have more 
 
 
 ## Discussion
-We finish the primary goal of estimating whether Trump will win the election. 
-Besides that, we are also interested in voting patterns based on people’s
-classification. The exciting thing is that people with higher education(earn 
-bachelor or master’s degrees)tend to be against Trump; while individuals who 
-have lower education levels tend to favor Trump. We choose age and sex as two 
-strongly correlated explanatory variables to voting preferences, but we are not
-sure about other variables. In the beginning, we thought census_region might 
-make a massive difference between people’s choices, as it turned out, people’s 
-voting behavior has little relation to their region.
+We finish the primary goal of estimating who is more likely to win the election. Besides that, we are also interested in the final result based on the estimation. As widely known in each state when one of the candidates of the president wins he/she will usually win all of the votes from the electoral college in that state. There fore, a support rate advance could reflect more dramatically on the final result of the election. Therefore, Joe Biden comparing to Donald Trump has a significant chance to win.  We choose age and sex as two strongly correlated explanatory variables to voting preferences, but we are not sure about other variables. In the beginning, we thought census_region might make a massive difference between people’s choices, as it turned out, people’s voting behaviour has little relation to their region.
 
 # Weaknesses
 Like all the survey estimates, these numbers are subject to a degree of error.
@@ -230,8 +220,13 @@ how satisfied Trump supporters are regarding the performance of the Trump
 administration. 
 
 ## Reference
-1. IPUMS USA, census data of 2018 USA, Retrieved from:
+Bryant Nick, July 2020, Trump's shortcomings make weak opponent Biden look strong, BBC News. Retrieved from:
+https://www.bbc.com/news/world-us-canada-53573083
+Collinson Steven, September 2020, Trump's controversies show his presidency is really all about himself, CNN Politics. Retrieved from:
+https://www.cnn.com/2019/09/09/politics/donald-trump-politics-alabama-hurricane-afghanistan-business/index.html
+IPUMS USA, 2018, census data of 2018 USA, Retrieved from:
 https://usa.ipums.org/usa-action/data_requests
-2. Voter Study Group, Nationscape, Retrieved from:
+Voter Study Group, 2020, Nationscape, Retrieved from:
 https://www.voterstudygroup.org/downloads?key=4b0ccde1-6d71-4a6f-8c5b-69e8172e4688
+
 
