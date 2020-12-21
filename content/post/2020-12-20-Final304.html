@@ -1,0 +1,328 @@
+---
+title: "Extended Analysis of 2019 Canadian Federal Election"
+author: "Chong Zhang"
+date: "2020/12/9"
+output: pdf_document
+---
+
+<link href="/rmarkdown-libs/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/anchor-sections/anchor-sections.js"></script>
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>As it was widely noticed in the past several years, surveys and data analysis has played a significant role in elections. In 2019 even though Justin Trudeau won the election, there still existing a tie in the polls before the election. Based on the prior knowledge that Canada did decide to carry out the proportional representation of voting since 2015(Patterson,2015), Trudeau was going to lose the 2019 election if the votes were proportional representative. This brings out the idea that the structure and process of the election are influential on the final result. Therefore, this essay will analyse the result of 2019 Canadian Federal Election assuming that all of the people with a clear idea of the election have voted during the election.</p>
+<p>The analysis will use the CES dataset to build up a multi-level logistic regression model to predict the personal choice of voting and predict the weighted result through the post-stratification technique with the help of another census data. In this case, people without citizenship but have a clear idea of election can be also included. Therefore, this result can be more “democratic” and the result can reflect more ideas from people who live in Canada. Two datasets will be reduced to fit each other.</p>
+</div>
+<div id="methodology" class="section level2">
+<h2>Methodology</h2>
+<div id="data" class="section level3">
+<h3>Data</h3>
+<p>This analysis collects information from two datasets. The data for the logistic model was collected from the Canadian Election Study - Online Survey(CES). The original data sets include various variables. This study selected the variables that represent the respondents’ gender, age, income and if they have children. These four could be important parameters used to predict their voting decisions because politics are connected with people’s lives. To minimize the effect of bad leverage point people have income greater than $1,000,000 was reduced from the dataset. The second data set was collected from the 2017 Canadian General Social Survey (GSS) and was chosen to collect enough variables for the model. This GSS data was used to represent the overall structure of the Candian population. By working as a census data, the GSS data will be grouped in cells to represents the post-stratification result of the logistic model.</p>
+<table style="width:100%;">
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Coefficients Liberal Party</caption>
+<colgroup>
+<col width="58%" />
+<col width="7%" />
+<col width="9%" />
+<col width="7%" />
+<col width="16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">z value</th>
+<th align="right">Pr(&gt;|z|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-1.3937</td>
+<td align="right">0.0993</td>
+<td align="right">-14.0336</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">age</td>
+<td align="right">0.0081</td>
+<td align="right">0.0015</td>
+<td align="right">5.4736</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="left">cps19_genderA woman</td>
+<td align="right">0.0424</td>
+<td align="right">0.0452</td>
+<td align="right">0.9372</td>
+<td align="right">0.3486</td>
+</tr>
+<tr class="even">
+<td align="left">cps19_genderOther (e.g. Trans, non-binary, two-spirit, gender-queer)</td>
+<td align="right">-0.3956</td>
+<td align="right">0.2937</td>
+<td align="right">-1.3467</td>
+<td align="right">0.1781</td>
+</tr>
+<tr class="odd">
+<td align="left">income_level</td>
+<td align="right">0.0798</td>
+<td align="right">0.0137</td>
+<td align="right">5.8317</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">have_childrenTRUE</td>
+<td align="right">-0.2777</td>
+<td align="right">0.0485</td>
+<td align="right">-5.7279</td>
+<td align="right">0.0000</td>
+</tr>
+</tbody>
+</table>
+<table style="width:100%;">
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Coefficients Conservative Party</caption>
+<colgroup>
+<col width="58%" />
+<col width="7%" />
+<col width="9%" />
+<col width="7%" />
+<col width="16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">z value</th>
+<th align="right">Pr(&gt;|z|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-1.4905</td>
+<td align="right">0.1024</td>
+<td align="right">-14.5623</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">age</td>
+<td align="right">0.0044</td>
+<td align="right">0.0015</td>
+<td align="right">2.8805</td>
+<td align="right">0.0040</td>
+</tr>
+<tr class="odd">
+<td align="left">cps19_genderA woman</td>
+<td align="right">-0.3843</td>
+<td align="right">0.0460</td>
+<td align="right">-8.3456</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">cps19_genderOther (e.g. Trans, non-binary, two-spirit, gender-queer)</td>
+<td align="right">-0.7767</td>
+<td align="right">0.3208</td>
+<td align="right">-2.4213</td>
+<td align="right">0.0155</td>
+</tr>
+<tr class="odd">
+<td align="left">income_level</td>
+<td align="right">0.0878</td>
+<td align="right">0.0140</td>
+<td align="right">6.2737</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">have_childrenTRUE</td>
+<td align="right">0.3581</td>
+<td align="right">0.0510</td>
+<td align="right">7.0152</td>
+<td align="right">0.0000</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Coefficients Test model</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">z value</th>
+<th align="right">Pr(&gt;|z|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-1.3536</td>
+<td align="right">0.0895</td>
+<td align="right">-15.1188</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">age</td>
+<td align="right">0.0078</td>
+<td align="right">0.0015</td>
+<td align="right">5.3972</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="left">is_nonbiTRUE</td>
+<td align="right">-0.4207</td>
+<td align="right">0.2925</td>
+<td align="right">-1.4386</td>
+<td align="right">0.1503</td>
+</tr>
+<tr class="even">
+<td align="left">income_level</td>
+<td align="right">0.0783</td>
+<td align="right">0.0136</td>
+<td align="right">5.7609</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="left">have_childrenTRUE</td>
+<td align="right">-0.2734</td>
+<td align="right">0.0483</td>
+<td align="right">-5.6646</td>
+<td align="right">0.0000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="model" class="section level3">
+<h3>Model</h3>
+<p>This analysis uses two multilevel logistic models built from the CES dataset. It represents the probability of people in Canada votes for the liberal part and conservative party. Both of the two models use the same set of independent variables including age, gender, income, and kids. In the model for predicting votes for the liberal party Z test did not show a significant test result for the gender variable. The summarising result of the Liberal party model tells a low coefficient a large p-value for female respondents and a large negative coefficient with the large p-value for the non-binary gender group. In this case, it seems that a null hypothesis of 0 coefficient for binary gender groups cannot be rejected. Therefore, a test model was produced to test if the gender variable can be deleted from the Liberal party model. This test model used the binary outcome of if the respondent is a member of non-binary gender group to see if the model could ignore the influence of gender. The result confirms this hypothesis that gender does not contribute to the Liberal party model through its non-significant z test outcome. In the second model for the Conservative Party, people with other gender shows its significant influence on voting outcome at 0.05 significant level. It shows a similar but more dramatic coefficient with the female group. Because, of the limitation of census data, which did not record the gender other than female and male, the other-gender people could be merged with the female group due to their similar trend of voting. On the ethics level, the perspective of non-binary gender people is as important as and even more important than major gender groups to push society to be more diverse. In this study, it is unfortunate to merge this group of people with the rest.</p>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 2: </span>Coefficients Liberal party</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">z value</th>
+<th align="right">Pr(&gt;|z|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-1.3622</td>
+<td align="right">0.0893</td>
+<td align="right">-15.2474</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">age</td>
+<td align="right">0.0079</td>
+<td align="right">0.0015</td>
+<td align="right">5.4655</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">income_level</td>
+<td align="right">0.0786</td>
+<td align="right">0.0136</td>
+<td align="right">5.7814</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">have_childrenTRUE</td>
+<td align="right">-0.2729</td>
+<td align="right">0.0483</td>
+<td align="right">-5.6540</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 2: </span>Coefficients Conservative Party</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">z value</th>
+<th align="right">Pr(&gt;|z|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-1.5152</td>
+<td align="right">0.1019</td>
+<td align="right">-14.8718</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">age</td>
+<td align="right">0.0046</td>
+<td align="right">0.0015</td>
+<td align="right">3.0354</td>
+<td align="right">0.0024</td>
+</tr>
+<tr class="odd">
+<td align="left">is_femaleTRUE</td>
+<td align="right">-0.3734</td>
+<td align="right">0.0459</td>
+<td align="right">-8.1390</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="left">income_level</td>
+<td align="right">0.0887</td>
+<td align="right">0.0140</td>
+<td align="right">6.3351</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="left">have_childrenTRUE</td>
+<td align="right">0.3578</td>
+<td align="right">0.0510</td>
+<td align="right">7.0084</td>
+<td align="right">0.0000</td>
+</tr>
+</tbody>
+</table>
+<p>After updating the variables, all parameters shows significant out come in their z test.Therefore, final model should be represented as follows.</p>
+<p><span class="math display">\[liberal: log(p/1-p)= -1.3622 +0.0079x_{age}+0.0786x_{income.level}-0.2729x_{have.children}\]</span>
+<span class="math display">\[Conservative: log(p/1-p)= -1.5152 +0.0046x_{age}-0.3734x_{is.female}+0.0887   x_{income.level}+0.3578x_{have.children}\]</span></p>
+</div>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
+<pre><code>##                Liberal Conservative
+## Voting rate(%) 29.82%  29.18%</code></pre>
+<p>According to this table, applying weighted estimates of 1462 different cells gives a 29.82% votes for Liberal Party and 29.18% votes for the Conservative Party. This result was calculated through several steps. First, in order to fit each other, the model and the post-stratification data was reduced to only contain the useful variables introduced before. Then, by applying different value many point estimates were created through the model introduced in the method section. Finally, the point estimates were weighted by the numbers of people in that specific cell, which have all of the same variables as the point estimates. This weighted estimates can completely reflect the influence of different variable in the multilevel logistic model and representation of population structure.</p>
+<p>This result of 29.82% and 29.18% gives a clear idea that if everyone including people without citizenship has voted in 2019 Canadian Federal Election the result can be different. As widely known, the Liberal Party in 2019 did win more seats than the Conservative Party but still lose on the number of votes. But this prediction shows that the Liberal Party can also win the election with more votes if everyone votes during the election.</p>
+</div>
+<div id="discussion" class="section level2">
+<h2>Discussion</h2>
+<div id="summary" class="section level3">
+<h3>Summary</h3>
+<p>To conclude, this analysis built two multilevel logistic models with variables of people’s age, gender, income level and whether have kids to predict if they could have voted for the Liberal Party and the Conservative Party in 2019 Canada Federal Election. Then, the overall predicted result was produced through post-stratification of the GSS dataset. It gives out a different result than the existing result from the election.</p>
+<p>###Conclusion</p>
+<p>Reviewing these analysing results the study can be interpreted as follows. Firstly, according to the comparison of the coefficient of gender in the two models, female citizens do have more incentive to vote for the Liberal party. It might because of the equity policy for female employees introduced on June 6 2019. According to the government page(2019), 22 selected organizations would deliver $7.5 million in the next two years. It can be a positive incentive that wins more credit among female citizens. Another coefficient can confirm the influence of the big promises made before the election. CBC News (Paul, 2019) states that for “new parents” employment insurance(EI) will be tax-free, however, for parents wany a second child this policy is useless. Therefore, it is quite reasonable that the first model states that if the citizens already have a child they are less likely vote Liberal party during the election. The final result can also be discussable. The original result shows the probability of losing if Justin Trudeau did implement the proportional representation of the votes. But after applying this all-voting prediction this risk disappeared.</p>
+<p>###Weakness &amp; Next Steps</p>
+<p>This analysis does have its weakness in the dataset chosen. The GSS data did not collect the information of non-binary gender. It wasted the gender recorded by the CES dataset. In the meantime, it shows that Canadian society did not pay enough attention to LGBTQ groups but started to focus more in recent years. From a statistical perspective, political analyses should focus on all groups of people including parents, immigrants, LGBTQ groups. LGBTQ groups do need more political attention.</p>
+<p>For the next step, this analysis can focus more on the seats in different provinces and produce the official prediction of the election because of the differed result from the original election system and Proportional representation in 2019. Also for future studies, gender can be divided into more cells to improve study for LGBTQ groups.</p>
+</div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Government of Canada. June 6 2019. “Canada to empower visible minority newcomer women”.<br />
+Immigration, Refugees and Citizenship Canada. Retreved from: <a href="https://www.canada.ca/en/immigration-refugees-citizenship/news/2019/06/canada-to-empower-visible-minority-newcomer-women.html" class="uri">https://www.canada.ca/en/immigration-refugees-citizenship/news/2019/06/canada-to-empower-visible-minority-newcomer-women.html</a></p>
+<p>Patterson, Brent. 2015. “Council of Canadians Calls on Trudeau to Implement Proportional
+Representation” Canadians.org. Retreved from: <a href="https://canadians.org/analysis/council-canadians-calls-trudeau-implement-proportional-representation" class="uri">https://canadians.org/analysis/council-canadians-calls-trudeau-implement-proportional-representation</a></p>
+<p>Paul John. October 07, 2019. “Here are some of the big campaign promises from the major
+parties so far”. CBC News. Retreved from: <a href="https://www.cbc.ca/news/politics/major-campaign-promises-federal-election-1.5311181" class="uri">https://www.cbc.ca/news/politics/major-campaign-promises-federal-election-1.5311181</a></p>
+<p>Statistics Canada. 2017.”General Social Survey (GSS)”
+Retreved from: <a href="https://www.statcan.gc.ca/eng/survey/household/4501" class="uri">https://www.statcan.gc.ca/eng/survey/household/4501</a></p>
+<p>Stephenson, Laura B; Harell, Allison; Rubenson, Daniel; Loewen, Peter John, 2020, ‘2019 Canadian
+Election Study - Online Survey’. Retreved from: <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DUS88V" class="uri">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DUS88V</a></p>
+</div>

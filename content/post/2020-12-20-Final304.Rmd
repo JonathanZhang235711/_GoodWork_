@@ -1,0 +1,215 @@
+---
+title: "Extended Analysis of 2019 Canadian Federal Election"
+author: "Chong Zhang"
+date: "2020/12/9"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = F, warning= F)
+# install.packages("")
+devtools::install_github("hodgettsp/cesR")
+library(tidyverse)
+library(visdat)
+library(cesR)
+library(skimr)
+library(haven)
+library(labelled)
+library(knitr)
+censusdata<-read_csv("2020-10-20-gss.csv")
+```
+```{r,results= "hide"}
+#cesR::get_decon()
+get_ces("ces2019_web")
+
+# convert values to factor type
+ces2019_web <- to_factor(ces2019_web)
+```
+```{r}
+modeldata<- ces2019_web%>%
+  mutate(vote_l= cps19_votechoice== "Liberal Party")%>%
+  mutate(vote_c= cps19_votechoice== "Conservative Party")%>%
+  mutate(have_children= cps19_children== "Yes")%>%
+  mutate(is_female= cps19_gender== "A woman")%>%
+  mutate(is_nonbi = cps19_gender!= "A woman"&cps19_gender!= "A man")%>%
+  filter(cps19_income_number < 1000000)%>%
+  select("cps19_yob","cps19_gender","cps19_income_number","cps19_province","have_children","vote_l","vote_c","is_female","is_nonbi")
+modeldata<-na.omit(modeldata)
+set.seed(3910)
+modeldata<-modeldata[sample(nrow(modeldata), 10000), ]
+modeldata$cps19_yob<-as.numeric(as.character(modeldata$cps19_yob))
+modeldata<- modeldata%>%
+  mutate(age=2019-cps19_yob)%>%
+  select("age","cps19_income_number","cps19_province","have_children","vote_l","vote_c","is_female","cps19_gender","is_nonbi")
+modeldata <- modeldata %>% 
+  mutate(income_level = cps19_income_number)
+lv1 <- replace(modeldata$income_level, 
+               modeldata$income_level <= 25000, 1)
+modeldata <- modeldata %>% mutate(income_level = lv1)
+
+lv2 <- replace(modeldata$income_level, 
+              modeldata$income_level >=25000&modeldata$income_level <=49999, 2)
+modeldata <- modeldata %>% mutate(income_level = lv2)
+
+lv3 <- replace(modeldata$income_level, 
+               modeldata$income_level >=50000&modeldata$income_level <=74999 , 3)
+modeldata <- modeldata %>% mutate(income_level = lv3)
+
+lv4 <- replace(modeldata$income_level, 
+               modeldata$income_level >=75000&modeldata$income_level <=99999 , 4)
+modeldata <-modeldata %>% mutate(income_level = lv4)
+
+lv5 <- replace(modeldata$income_level, 
+               modeldata$income_level >=100000&modeldata$income_level <=124999 , 5)
+modeldata <- modeldata %>% mutate(income_level = lv5)
+
+lv6 <- replace(modeldata$income_level, 
+               modeldata$income_level >=125000 , 6)
+
+modeldata <- modeldata %>% mutate(income_level = lv6)%>%
+  select(-"cps19_income_number")
+modeldata$vote_l<- as.factor(modeldata$vote_l)
+modeldata$vote_c<- as.factor(modeldata$vote_c)
+```
+```{r}
+censusdata<-censusdata%>%
+  mutate(have_children = censusdata$total_children!= 0)%>%
+  mutate(is_female= sex== "Female")
+censusdata$age<-as.integer(censusdata$age)
+censusdata<-censusdata%>%
+  mutate(income_level = income_family)
+lv1 <- replace(censusdata$income_level, 
+               censusdata$income_level == "Less than $25,000", 1)
+censusdata <- censusdata %>% mutate(income_level = lv1)
+
+lv2 <- replace(censusdata$income_level, 
+               censusdata$income_level == "$25,000 to $49,999" , 2)
+censusdata <- censusdata %>% mutate(income_level = lv2)
+
+lv3 <- replace(censusdata$income_level, 
+               censusdata$income_level == "$50,000 to $74,999" , 3)
+censusdata <- censusdata %>% mutate(income_level = lv3)
+
+lv4 <- replace(censusdata$income_level, 
+               censusdata$income_level == "$75,000 to $99,999" , 4)
+censusdata <- censusdata %>% mutate(income_level = lv4)
+
+lv5 <- replace(censusdata$income_level, 
+               censusdata$income_level == "$100,000 to $ 124,999" , 5)
+censusdata <- censusdata %>% mutate(income_level = lv5)
+
+lv6 <- replace(censusdata$income_level, 
+               censusdata$income_level == "$125,000 and more" , 6)
+censusdata <- censusdata %>% mutate(income_level = lv6)
+censusdata$income_level <- as.numeric(censusdata$income_level)
+censusdata<-censusdata%>%
+  select("income_level","is_female","have_children","age")
+censusdata<-na.omit(censusdata)
+censusdata <- 
+  censusdata %>%
+  count(income_level,is_female,have_children,age) 
+```
+
+## Introduction
+
+As it was widely noticed in the past several years, surveys and data analysis has played a significant role in elections. In 2019 even though Justin Trudeau won the election, there still existing a tie in the polls before the election. Based on the prior knowledge that Canada did decide to carry out the proportional representation of voting since 2015(Patterson,2015), Trudeau was going to lose the 2019 election if the votes were proportional representative. This brings out the idea that the structure and process of the election are influential on the final result. Therefore, this essay will analyse the result of 2019 Canadian Federal Election assuming that all of the people with a clear idea of the election have voted during the election. 
+
+The analysis will use the CES dataset to build up a multi-level logistic regression model to predict the personal choice of voting and predict the weighted result through the post-stratification technique with the help of another census data. In this case, people without citizenship but have a clear idea of election can be also included. Therefore, this result can be more "democratic" and the result can reflect more ideas from people who live in Canada. Two datasets will be reduced to fit each other. 
+ 
+## Methodology
+
+### Data
+
+This analysis collects information from two datasets. The data for the logistic model was collected from the Canadian Election Study - Online Survey(CES). The original data sets include various variables. This study selected the variables that represent the respondents’ gender, age, income and if they have children. These four could be important parameters used to predict their voting decisions because politics are connected with people's lives. To minimize the effect of bad leverage point people have income greater than $1,000,000 was reduced from the dataset. The second data set was collected from the 2017 Canadian General Social Survey (GSS) and was chosen to collect enough variables for the model. This GSS data was used to represent the overall structure of the Candian population. By working as a census data, the GSS data will be grouped in cells to represents the post-stratification result of the logistic model. 
+
+```{r}
+full_logmodel_l<-glm(vote_l ~ age+cps19_gender+income_level+have_children,
+                data = modeldata, family = 'binomial')
+full_logmodel_c<-glm(vote_c ~ age+cps19_gender+income_level+have_children,
+                data = modeldata, family = 'binomial')
+test_logmodel_l<-glm(vote_l ~ age+is_nonbi+income_level+have_children,
+                data = modeldata, family = 'binomial')
+kable(summary(full_logmodel_l)$coefficient,digits =4 ,caption = "Coefficients Liberal Party")
+
+kable(summary(full_logmodel_c)$coefficient,digits =4 ,caption = "Coefficients Conservative Party")
+kable(summary(test_logmodel_l)$coefficient,digits =4 ,caption = "Coefficients Test model")
+```
+
+### Model
+
+This analysis uses two multilevel logistic models built from the CES dataset. It represents the probability of people in Canada votes for the liberal part and conservative party. Both of the two models use the same set of independent variables including age, gender, income, and kids. In the model for predicting votes for the liberal party Z test did not show a significant test result for the gender variable. The summarising result of the Liberal party model tells a low coefficient a large p-value for female respondents and a large negative coefficient with the large p-value for the non-binary gender group. In this case, it seems that a null hypothesis of 0 coefficient for binary gender groups cannot be rejected. Therefore, a test model was produced to test if the gender variable can be deleted from the Liberal party model. This test model used the binary outcome of if the respondent is a member of non-binary gender group to see if the model could ignore the influence of gender. The result confirms this hypothesis that gender does not contribute to the Liberal party model through its non-significant z test outcome. In the second model for the Conservative Party, people with other gender shows its significant influence on voting outcome at 0.05 significant level. It shows a similar but more dramatic coefficient with the female group. Because, of the limitation of census data, which did not record the gender other than female and male, the other-gender people could be merged with the female group due to their similar trend of voting. On the ethics level, the perspective of non-binary gender people is as important as and even more important than major gender groups to push society to be more diverse. In this study, it is unfortunate to merge this group of people with the rest. 
+
+```{r}
+logmodel_l<-glm(vote_l ~ age+income_level+have_children,
+                data = modeldata, family = 'binomial')
+logmodel_c<-glm(vote_c ~ age+is_female+income_level+have_children,
+                data = modeldata, family = 'binomial')
+kable(summary(logmodel_l)$coefficient,digits =4 ,caption = "Coefficients Liberal party")
+
+kable(summary(logmodel_c)$coefficient,digits =4 ,caption = "Coefficients Conservative Party")
+```
+After updating the variables, all parameters shows significant out come in their z test.Therefore, final model should be represented as follows.
+
+$$liberal: log(p/1-p)= -1.3622 +0.0079x_{age}+0.0786x_{income.level}-0.2729x_{have.children}$$
+$$Conservative: log(p/1-p)= -1.5152 +0.0046x_{age}-0.3734x_{is.female}+0.0887	x_{income.level}+0.3578x_{have.children}$$
+
+## Results
+
+```{r}
+censusdata$estimate <-logmodel_l %>%
+  predict(newdata = censusdata, type = "response")
+
+result <- censusdata%>%
+  filter(age >= 18)%>%
+  mutate(alp_predict_prop = estimate*n/sum(n)) %>%
+  summarise(Vote_liberal = sum(alp_predict_prop))
+
+censusdata$estimate <-logmodel_c %>%
+  predict(newdata = censusdata, type = "response")
+
+result_c <- censusdata%>%
+  filter(age >= 18)%>%
+  mutate(alp_predict_prop = estimate*n/sum(n)) %>%
+  summarise(Vote_Conservative = sum(alp_predict_prop))
+data_table <- matrix(c("29.82%","29.18%"), ncol = 2, byrow = TRUE)
+colnames(data_table) <- c("Liberal", "Conservative")
+rownames(data_table) <- c("Voting rate(%)")
+data_table <- as.table(data_table)
+data_table
+```
+According to this table, applying weighted estimates of 1462 different cells gives a 29.82% votes for Liberal Party and 29.18% votes for the Conservative Party. This result was calculated through several steps. First, in order to fit each other, the model and the post-stratification data was reduced to only contain the useful variables introduced before. Then, by applying different value many point estimates were created through the model introduced in the method section. Finally, the point estimates were weighted by the numbers of people in that specific cell, which have all of the same variables as the point estimates. This weighted estimates can completely reflect the influence of different variable in the multilevel logistic model and representation of population structure.    
+
+This result of 29.82% and 29.18% gives a clear idea that if everyone including people without citizenship has voted in 2019 Canadian Federal Election the result can be different. As widely known, the Liberal Party in 2019 did win more seats than the Conservative Party but still lose on the number of votes. But this prediction shows that the Liberal Party can also win the election with more votes if everyone votes during the election. 
+
+## Discussion
+
+### Summary
+
+To conclude, this analysis built two multilevel logistic models with variables of people’s age, gender, income level and whether have kids to predict if they could have voted for the Liberal Party and the Conservative Party in 2019 Canada Federal Election. Then, the overall predicted result was produced through post-stratification of the GSS dataset. It gives out a different result than the existing result from the election.
+
+###Conclusion
+
+Reviewing these analysing results the study can be interpreted as follows. Firstly, according to the comparison of the coefficient of gender in the two models, female citizens do have more incentive to vote for the Liberal party. It might because of the equity policy for female employees introduced on June 6 2019. According to the government page(2019), 22 selected organizations would deliver $7.5 million in the next two years. It can be a positive incentive that wins more credit among female citizens. Another coefficient can confirm the influence of the big promises made before the election. CBC News (Paul, 2019) states that for “new parents” employment insurance(EI) will be tax-free, however, for parents wany a second child this policy is useless. Therefore, it is quite reasonable that the first model states that if the citizens already have a child they are less likely vote Liberal party during the election. The final result can also be discussable. The original result shows the probability of losing if Justin Trudeau did implement the proportional representation of the votes. But after applying this all-voting prediction this risk disappeared. 
+
+###Weakness & Next Steps
+
+This analysis does have its weakness in the dataset chosen. The GSS data did not collect the information of non-binary gender. It wasted the gender recorded by the CES dataset. In the meantime, it shows that Canadian society did not pay enough attention to LGBTQ groups but started to focus more in recent years. From a statistical perspective, political analyses should focus on all groups of people including parents, immigrants, LGBTQ groups. LGBTQ groups do need more political attention.
+
+For the next step, this analysis can focus more on the seats in different provinces and produce the official prediction of the election because of the differed result from the original election system and Proportional representation in 2019. Also for future studies, gender can be divided into more cells to improve study for LGBTQ groups.
+
+## References
+
+Government of Canada. June 6 2019. “Canada to empower visible minority newcomer women”.  
+Immigration, Refugees and Citizenship Canada. Retreved from: https://www.canada.ca/en/immigration-refugees-citizenship/news/2019/06/canada-to-empower-visible-minority-newcomer-women.html
+
+Patterson, Brent. 2015. “Council of Canadians Calls on Trudeau to Implement Proportional 
+Representation” Canadians.org. Retreved from: https://canadians.org/analysis/council-canadians-calls-trudeau-implement-proportional-representation
+
+Paul John. October 07, 2019. “Here are some of the big campaign promises from the major 
+parties so far”. CBC News. Retreved from: https://www.cbc.ca/news/politics/major-campaign-promises-federal-election-1.5311181
+
+Statistics Canada. 2017.”General Social Survey (GSS)” 
+Retreved from: https://www.statcan.gc.ca/eng/survey/household/4501
+
+Stephenson, Laura B; Harell, Allison; Rubenson, Daniel; Loewen, Peter John, 2020, '2019 Canadian 
+Election Study - Online Survey'. Retreved from: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DUS88V
