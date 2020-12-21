@@ -1,7 +1,8 @@
 ---
 title: "Extended Analysis of 2019 Canadian Federal Election"
 author: "Chong Zhang"
-date: "2020/12/9"
+date: "2020-12-20T00:00:00-07:00"
+Abstract: "This study used multilevel logistic regression model and post-stratification to predict the result of the 2019 Canada Federal Election assuming everyone in Canada participate in the election. By finishing two models for the Liberal Party and the Conservative Party the predicted result slightly differ from the existing result. It may reflect several ideas of society."
 output: pdf_document
 ---
 
@@ -187,11 +188,11 @@ This result of 29.82% and 29.18% gives a clear idea that if everyone including p
 
 To conclude, this analysis built two multilevel logistic models with variables of people’s age, gender, income level and whether have kids to predict if they could have voted for the Liberal Party and the Conservative Party in 2019 Canada Federal Election. Then, the overall predicted result was produced through post-stratification of the GSS dataset. It gives out a different result than the existing result from the election.
 
-###Conclusion
+### Conclusion
 
 Reviewing these analysing results the study can be interpreted as follows. Firstly, according to the comparison of the coefficient of gender in the two models, female citizens do have more incentive to vote for the Liberal party. It might because of the equity policy for female employees introduced on June 6 2019. According to the government page(2019), 22 selected organizations would deliver $7.5 million in the next two years. It can be a positive incentive that wins more credit among female citizens. Another coefficient can confirm the influence of the big promises made before the election. CBC News (Paul, 2019) states that for “new parents” employment insurance(EI) will be tax-free, however, for parents wany a second child this policy is useless. Therefore, it is quite reasonable that the first model states that if the citizens already have a child they are less likely vote Liberal party during the election. The final result can also be discussable. The original result shows the probability of losing if Justin Trudeau did implement the proportional representation of the votes. But after applying this all-voting prediction this risk disappeared. 
 
-###Weakness & Next Steps
+### Weakness & Next Steps
 
 This analysis does have its weakness in the dataset chosen. The GSS data did not collect the information of non-binary gender. It wasted the gender recorded by the CES dataset. In the meantime, it shows that Canadian society did not pay enough attention to LGBTQ groups but started to focus more in recent years. From a statistical perspective, political analyses should focus on all groups of people including parents, immigrants, LGBTQ groups. LGBTQ groups do need more political attention.
 
