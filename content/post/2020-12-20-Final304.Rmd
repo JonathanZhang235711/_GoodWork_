@@ -2,14 +2,14 @@
 title: "Extended Analysis of 2019 Canadian Federal Election"
 author: "Chong Zhang"
 date: "2020-12-20T00:00:00-07:00"
-Abstract: "This study used multilevel logistic regression model and post-stratification to predict the result of the 2019 Canada Federal Election assuming everyone in Canada participate in the election. By finishing two models for the Liberal Party and the Conservative Party the predicted result slightly differ from the existing result. It may reflect several ideas of society."
+Abstract: "This study used logistic regression model and post-stratification to predict the result of the 2019 Canada Federal Election assuming everyone in Canada participate in the election. By finishing two models for the Liberal Party and the Conservative Party the predicted result slightly differ from the existing result. It may reflect several ideas of society."
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = F, warning= F)
 # install.packages("")
-devtools::install_github("hodgettsp/cesR")
+#devtools::install_github("hodgettsp/cesR")
 library(tidyverse)
 library(visdat)
 library(cesR)
@@ -115,7 +115,7 @@ censusdata <-
 
 As it was widely noticed in the past several years, surveys and data analysis has played a significant role in elections. In 2019 even though Justin Trudeau won the election, there still existing a tie in the polls before the election. Based on the prior knowledge that Canada did decide to carry out the proportional representation of voting since 2015(Patterson,2015), Trudeau was going to lose the 2019 election if the votes were proportional representative. This brings out the idea that the structure and process of the election are influential on the final result. Therefore, this essay will analyse the result of 2019 Canadian Federal Election assuming that all of the people with a clear idea of the election have voted during the election. 
 
-The analysis will use the CES dataset to build up a multi-level logistic regression model to predict the personal choice of voting and predict the weighted result through the post-stratification technique with the help of another census data. In this case, people without citizenship but have a clear idea of election can be also included. Therefore, this result can be more "democratic" and the result can reflect more ideas from people who live in Canada. Two datasets will be reduced to fit each other. 
+The analysis will use the CES dataset to build up a logistic regression model to predict the personal choice of voting and predict the weighted result through the post-stratification technique with the help of another census data. In this case, people without citizenship but have a clear idea of election can be also included. Therefore, this result can be more "democratic" and the result can reflect more ideas from people who live in Canada. Two datasets will be reduced to fit each other. 
  
 ## Methodology
 
@@ -138,7 +138,7 @@ kable(summary(test_logmodel_l)$coefficient,digits =4 ,caption = "Coefficients Te
 
 ### Model
 
-This analysis uses two multilevel logistic models built from the CES dataset. It represents the probability of people in Canada votes for the liberal part and conservative party. Both of the two models use the same set of independent variables including age, gender, income, and kids. In the model for predicting votes for the liberal party Z test did not show a significant test result for the gender variable. The summarising result of the Liberal party model tells a low coefficient a large p-value for female respondents and a large negative coefficient with the large p-value for the non-binary gender group. In this case, it seems that a null hypothesis of 0 coefficient for binary gender groups cannot be rejected. Therefore, a test model was produced to test if the gender variable can be deleted from the Liberal party model. This test model used the binary outcome of if the respondent is a member of non-binary gender group to see if the model could ignore the influence of gender. The result confirms this hypothesis that gender does not contribute to the Liberal party model through its non-significant z test outcome. In the second model for the Conservative Party, people with other gender shows its significant influence on voting outcome at 0.05 significant level. It shows a similar but more dramatic coefficient with the female group. Because, of the limitation of census data, which did not record the gender other than female and male, the other-gender people could be merged with the female group due to their similar trend of voting. On the ethics level, the perspective of non-binary gender people is as important as and even more important than major gender groups to push society to be more diverse. In this study, it is unfortunate to merge this group of people with the rest. 
+This analysis uses two logistic models built from the CES dataset. It represents the probability of people in Canada votes for the liberal part and conservative party. Both of the two models use the same set of independent variables including age, gender, income, and kids. In the model for predicting votes for the liberal party Z test did not show a significant test result for the gender variable. The summarising result of the Liberal party model tells a low coefficient a large p-value for female respondents and a large negative coefficient with the large p-value for the non-binary gender group. In this case, it seems that a null hypothesis of 0 coefficient for binary gender groups cannot be rejected. Therefore, a test model was produced to test if the gender variable can be deleted from the Liberal party model. This test model used the binary outcome of if the respondent is a member of non-binary gender group to see if the model could ignore the influence of gender. The result confirms this hypothesis that gender does not contribute to the Liberal party model through its non-significant z test outcome. In the second model for the Conservative Party, people with other gender shows its significant influence on voting outcome at 0.05 significant level. It shows a similar but more dramatic coefficient with the female group. Because, of the limitation of census data, which did not record the gender other than female and male, the other-gender people could be merged with the female group due to their similar trend of voting. On the ethics level, the perspective of non-binary gender people is as important as and even more important than major gender groups to push society to be more diverse. In this study, it is unfortunate to merge this group of people with the rest. 
 
 ```{r}
 logmodel_l<-glm(vote_l ~ age+income_level+have_children,
@@ -178,7 +178,7 @@ rownames(data_table) <- c("Voting rate(%)")
 data_table <- as.table(data_table)
 data_table
 ```
-According to this table, applying weighted estimates of 1462 different cells gives a 29.82% votes for Liberal Party and 29.18% votes for the Conservative Party. This result was calculated through several steps. First, in order to fit each other, the model and the post-stratification data was reduced to only contain the useful variables introduced before. Then, by applying different value many point estimates were created through the model introduced in the method section. Finally, the point estimates were weighted by the numbers of people in that specific cell, which have all of the same variables as the point estimates. This weighted estimates can completely reflect the influence of different variable in the multilevel logistic model and representation of population structure.    
+According to this table, applying weighted estimates of 1462 different cells gives a 29.82% votes for Liberal Party and 29.18% votes for the Conservative Party. This result was calculated through several steps. First, in order to fit each other, the model and the post-stratification data was reduced to only contain the useful variables introduced before. Then, by applying different value many point estimates were created through the model introduced in the method section. Finally, the point estimates were weighted by the numbers of people in that specific cell, which have all of the same variables as the point estimates. This weighted estimates can completely reflect the influence of different variable in the logistic model and representation of population structure.    
 
 This result of 29.82% and 29.18% gives a clear idea that if everyone including people without citizenship has voted in 2019 Canadian Federal Election the result can be different. As widely known, the Liberal Party in 2019 did win more seats than the Conservative Party but still lose on the number of votes. But this prediction shows that the Liberal Party can also win the election with more votes if everyone votes during the election. 
 
@@ -186,7 +186,7 @@ This result of 29.82% and 29.18% gives a clear idea that if everyone including p
 
 ### Summary
 
-To conclude, this analysis built two multilevel logistic models with variables of people’s age, gender, income level and whether have kids to predict if they could have voted for the Liberal Party and the Conservative Party in 2019 Canada Federal Election. Then, the overall predicted result was produced through post-stratification of the GSS dataset. It gives out a different result than the existing result from the election.
+To conclude, this analysis built two logistic models with variables of people’s age, gender, income level and whether have kids to predict if they could have voted for the Liberal Party and the Conservative Party in 2019 Canada Federal Election. Then, the overall predicted result was produced through post-stratification of the GSS dataset. It gives out a different result than the existing result from the election.
 
 ### Conclusion
 

@@ -1,0 +1,109 @@
+---
+title: "COVID-19 Visualization"
+author: "Chong Zhang"
+date: "2021-04-01T00:00:00-07:00"
+output:
+  pdf_document: default
+urlcolor: blue
+header-includes:    
+  - \usepackage{lastpage}
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhead[CO, CE]{Chong Zhang}
+  - \fancyfoot[CO, CE]{\thepage \ of \pageref{LastPage}}
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+<link href="/rmarkdown-libs/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/anchor-sections/anchor-sections.js"></script>
+
+
+<p>Code last run 2021-04-01.<br />
+Daily: Data as of January 29, 2021.<br />
+Neighbourhood: Data as of January 28, 2021.</p>
+<div id="task-1-daily-cases" class="section level1">
+<h1>Task 1: Daily cases</h1>
+<div id="data-wrangling" class="section level2">
+<h2>Data wrangling</h2>
+<pre class="r"><code>reported&lt;- reported_raw%&gt;%
+  mutate_if(is.numeric,replace_na,replace=0)%&gt;%
+  mutate(reported_date=date(reported_date))%&gt;%
+  pivot_longer( -c(reported_date),names_to= &quot;status&quot;,values_to=&#39;count&#39;)%&gt;%
+  mutate(status=str_to_sentence(status))%&gt;%
+  mutate(status=fct_relevel(status,&#39;Recovered&#39;,after=1))
+
+#reported[is.na(reported)] &lt;- 0</code></pre>
+<div style="page-break-after: always;"></div>
+</div>
+<div id="data-visualization" class="section level2">
+<h2>Data visualization</h2>
+<pre class="r"><code>reported%&gt;%
+  ggplot(aes(x=reported_date,y=count,fill=status))+
+  geom_bar(stat = &#39;identity&#39;)+theme_minimal()+
+  labs(title=&quot;Cases reported by day in Toronto, Canada&quot;,
+       subtitle = &quot;Confirmed and probable cases&quot;,
+       x=&quot;Reported date&quot;,
+       y=&quot;Case count&quot;,
+       caption = str_c(&quot;Created by: Chong Zhang for STA303/1002,U of T\n Source: Ontario Ministry of Health, Integrated  Public Health Information System and CORES\n&quot;,date_daily[1,1]))+
+  theme(legend.title = element_blank(),legend.position = c(0.15,0.8))+
+  scale_x_date(labels=scales::date_format(&quot;%d %b %y&quot;),limits = c(date(&quot;2020-01-01&quot;)
+                                                                 ,Sys.Date()))+
+  scale_y_continuous(limits  = c(0,2000))+
+  scale_fill_manual(values = c(&quot;#003F5C&quot;,&quot;#86BCB6&quot;,&quot;#B9CA5D&quot; ))</code></pre>
+<p><img src="/post/2021-04-01-data-exploration_files/figure-html/cases_vis-1.png" width="672" /></p>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+<div id="task-2-outbreak-type" class="section level1">
+<h1>Task 2: Outbreak type</h1>
+<div id="data-wrangling-1" class="section level2">
+<h2>Data wrangling</h2>
+<pre class="r"><code>outbreak&lt;-outbreak_raw%&gt;%
+  mutate(episode_week=date(episode_week))%&gt;%
+  mutate(outbreak_or_sporadic = str_replace(outbreak_raw$outbreak_or_sporadic,&quot;OB Associated&quot;,&quot;Outbreak associated&quot;))%&gt;%
+  mutate(outbreak_or_sporadic= fct_relevel(outbreak_or_sporadic,&#39;Outbreak associated&#39;,after=1))%&gt;%
+  group_by(episode_week)
+outbreak1&lt;-outbreak_raw%&gt;%
+  group_by(episode_week)%&gt;%summarise(total_cases=sum(cases),.groups=&quot;drop&quot;)</code></pre>
+<div style="page-break-after: always;"></div>
+</div>
+<div id="data-visualization-1" class="section level2">
+<h2>Data visualization</h2>
+<pre class="r"><code>outbreak%&gt;%
+  ggplot(aes(x=episode_week,y=cases,fill=outbreak_or_sporadic))+
+  geom_bar(stat = &#39;identity&#39;)+theme_minimal()+
+  labs(title=&quot;Cases by outbreak type and week in Toronto, Canada&quot;,
+       subtitle = &quot;Confirmed and probable cases&quot;,
+       x=&quot;Episode Week&quot;,
+       y=&quot;Case count&quot;,
+       caption = str_c(&quot;Created by: Chong Zhang for STA303/1002,U of T\nSource: Ontario Ministry of Health, Integrated Public Health Information System and CORES\n&quot;,date_daily[1,1]))+
+  theme(legend.title = element_blank(),legend.position = c(0.15,0.8))+
+  scale_x_date(labels=scales::date_format(&quot;%d %b %y&quot;),limits = c(date(&quot;2020-01-01&quot;)
+                                                                 ,Sys.Date()))+
+  scale_y_continuous(limits  = c(0,max(outbreak1$total_cases)))+
+  scale_fill_manual(values = c(&quot;#86BCB6&quot;,&quot;#B9CA5D&quot;))</code></pre>
+<p><img src="/post/2021-04-01-data-exploration_files/figure-html/outbreak_vis-1.png" width="672" /></p>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+<div id="task-3-neighbourhoods" class="section level1">
+<h1>Task 3: Neighbourhoods</h1>
+<div id="data-wrangling-part-1" class="section level2">
+<h2>Data wrangling: part 1</h2>
+<pre class="r"><code>income &lt;- nbhood_profile %&gt;%
+  filter(`_id`==1143) %&gt;%
+  pivot_longer(-c(`_id`,Category,Topic,`Data Source`, Characteristic),names_to = &quot;neighbourhood_name&quot;,values_to=&quot;percentage&quot;) %&gt;%
+  mutate(percentage=parse_number(percentage))</code></pre>
+</div>
+<div id="data-wrangling-part-2" class="section level2">
+<h2>Data wrangling: part 2</h2>
+<pre class="r"><code>nbhoods_shape_raw$AREA_NAME[nbhoods_shape_raw$`_id`==10681]&lt;-&quot;Weston-Pelham Park (91)&quot;
+nbhoods_shape_raw$AREA_NAME[nbhoods_shape_raw$`_id`==10755]&lt;-&quot;Cabbagetown-South St. James Town (71)&quot;
+nbhoods_shape_raw$AREA_NAME[nbhoods_shape_raw$`_id`==10659]&lt;-&quot;North St. James Town (74)&quot;
+nbhoods_all&lt;-nbhoods_shape_raw%&gt;%
+  mutate(neighbourhood_name =str_remove(nbhoods_shape_raw$AREA_NAME ,&quot;\\s\\(\\d+\\)$&quot;))%&gt;%
+  left_join(income,by=&quot;neighbourhood_name&quot;) %&gt;%
+  left_join(nbhood_raw,by=&quot;neighbourhood_name&quot;) %&gt;%
+  rename(rate_per_100000=rate_per_100_000_people)</code></pre>
+</div>
+</div>
